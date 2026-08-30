@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify tag matches the plugin header version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          HEADER=$(grep -m1 '^ \* Version:' rey-swatches-import.php | sed 's/.*Version:[[:space:]]*//' | tr -d '[:space:]')
+          echo "tag=$TAG header=$HEADER"
+          if [ "$TAG" != "$HEADER" ]; then
+            echo "::error::Tag $TAG does not match the Version: header ($HEADER) in rey-swatches-import.php."
+            echo "Bump the header and the RSI_VERSION constant, then retag."
+            exit 1
+          fi
+
+      # The zip must contain a single top-level `rey-swatches-import/` directory.
+      # WordPress installs the update into whatever directory the archive unpacks
+      # to, so any other name would move the plugin and deactivate it mid-update.
+      - name: Build plugin zip
+        run: |
+          mkdir -p build/rey-swatches-import
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='build' \
+            --exclude='.gitignore' \
+            --exclude='README.md' \
+            ./ build/rey-swatches-import/
+          cd build && zip -r -q -X ../rey-swatches-import.zip rey-swatches-import
+
+      - name: Verify archive layout
+        run: |
+          TOP=$(unzip -Z1 rey-swatches-import.zip | cut -d/ -f1 | sort -u)
+          echo "top-level entries: $TOP"
+          if [ "$TOP" != "rey-swatches-import" ]; then
+            echo "::error::Archive must contain exactly one top-level directory named 'rey-swatches-import'."
+            exit 1
+          fi
+          unzip -l rey-swatches-import.zip | grep -q 'rey-swatches-import/rey-swatches-import.php' || {
+            echo "::error::rey-swatches-import/rey-swatches-import.php missing from the archive."
+            exit 1
+          }
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: rey-swatches-import.zip
+          generate_release_notes: true
+
+      # Rewrite version.json in `main` so existing installs see the update.
+      # The package URL is deterministic: /releases/download/v<TAG>/<zip>.
+      - name: Update version.json in main
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          python3 - <<PY
+          import json
+          with open('version.json', 'w') as f:
+              json.dump({
+                  "version": "${TAG}",
+                  "package": "https://github.com/jodukkan-max/universal-import/releases/download/v${TAG}/rey-swatches-import.zip",
+                  "requires": "5.0",
+                  "tested": "6.6",
+              }, f, indent=2)
+              f.write("\n")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          git commit -m "chore: bump version.json to ${TAG}" || echo "version.json unchanged"
+          git push origin HEAD:main

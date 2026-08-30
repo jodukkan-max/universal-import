@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name:  Universal Import
- * Plugin URI:   https://github.com/jodukkan-max/rey-swatches-import
+ * Plugin URI:   https://github.com/jodukkan-max/universal-import
  * Description:  Receives CSV data from the Cosmetics Scraper app and imports
  *               WooCommerce variable products with full swatch support
  *               (color swatches, image swatches, extra variation images).
- * Version:      1.18.2
+ * Version:      1.19.0
  * Author:       Cosmetics Scraper Team
  * License:      GPL-2.0+
  * Requires PHP: 7.4
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('RSI_VERSION', '1.18.2');
+define('RSI_VERSION', '1.19.0');
 define('RSI_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('RSI_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('RSI_REST_NAMESPACE', 'scraper/v1');
@@ -31,6 +31,13 @@ require_once RSI_PLUGIN_DIR . 'includes/class-product-creator.php';
 require_once RSI_PLUGIN_DIR . 'includes/class-rest-endpoint.php';
 require_once RSI_PLUGIN_DIR . 'includes/class-erp-endpoint.php';
 require_once RSI_PLUGIN_DIR . 'includes/class-admin-page.php';
+require_once RSI_PLUGIN_DIR . 'includes/class-universal-import-updater.php';
+
+/**
+ * Register the self-update mechanism powered by a GitHub-hosted version.json
+ * file. No wordpress.org listing needed.
+ */
+new Universal_Import_Updater( __FILE__, RSI_VERSION );
 
 /**
  * Generate the auth key on plugin activation.
