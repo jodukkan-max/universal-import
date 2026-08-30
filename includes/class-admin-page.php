@@ -22,8 +22,8 @@ class Rsi_Admin_Page {
      */
     public function register(): void {
         add_menu_page(
-            __('Rey Swatches Import', 'rey-swatches-import'),
-            __('Rey Swatches Import', 'rey-swatches-import'),
+            __('Universal Import', 'rey-swatches-import'),
+            __('Universal Import', 'rey-swatches-import'),
             'manage_options',
             'rey-swatches-import',
             [$this, 'render'],
@@ -73,7 +73,7 @@ class Rsi_Admin_Page {
         $active_tab = isset($_GET['tab']) ? sanitize_text_field(wp_unslash($_GET['tab'])) : 'scraper';
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e('Rey Swatches Import', 'rey-swatches-import'); ?></h1>
+            <h1><?php esc_html_e('Universal Import', 'rey-swatches-import'); ?></h1>
 
             <!-- Tab Navigation -->
             <nav class="nav-tab-wrapper" style="margin-bottom:16px;">

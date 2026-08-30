@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name:  Rey Swatches Import for Cosmetics Scraper
- * Plugin URI:   https://github.com/your-org/rey-swatches-import
- * Description:  Receives CSV data from the Cosmetics Scraper Chrome extension and
- *               imports WooCommerce variable products with full Rey theme swatch
- *               support (color swatches, image swatches, extra variation images).
- * Version:      1.18.1
+ * Plugin Name:  Universal Import
+ * Plugin URI:   https://github.com/jodukkan-max/rey-swatches-import
+ * Description:  Receives CSV data from the Cosmetics Scraper app and imports
+ *               WooCommerce variable products with full swatch support
+ *               (color swatches, image swatches, extra variation images).
+ * Version:      1.18.2
  * Author:       Cosmetics Scraper Team
  * License:      GPL-2.0+
  * Requires PHP: 7.4
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('RSI_VERSION', '1.18.1');
+define('RSI_VERSION', '1.18.2');
 define('RSI_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('RSI_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('RSI_REST_NAMESPACE', 'scraper/v1');
@@ -72,7 +72,7 @@ function rsi_init(): void {
         add_action('admin_notices', function () {
             echo '<div class="notice notice-error"><p>';
             esc_html_e(
-                'Rey Swatches Import requires WooCommerce to be installed and activated.',
+                'Universal Import requires WooCommerce to be installed and activated.',
                 'rey-swatches-import'
             );
             echo '</p></div>';
