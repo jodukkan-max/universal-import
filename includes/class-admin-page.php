@@ -11,11 +11,9 @@
 class Rsi_Admin_Page {
 
     /**
-     * Option key and key generation constants.
+     * Option key for the scraper auth key.
      */
     private const OPTION_KEY  = 'rsi_auth_key';
-    private const KEY_LENGTH  = 4;
-    private const KEY_GROUPS  = 1;  // single block, no dashes
 
     /**
      * Register the admin menu page.
@@ -65,7 +63,6 @@ class Rsi_Admin_Page {
                 . '</p></div>';
         }
 
-        $formatted   = $this->format_key($key);
         $erp_key     = Rsi_Erp_Endpoint::get_key();
         $erp_url     = home_url('/wp-json/scraper/v1/erp-stock');
 
@@ -93,7 +90,7 @@ class Rsi_Admin_Page {
                 <h2><?php esc_html_e('Auth Key', 'rey-swatches-import'); ?></h2>
                 <p><?php esc_html_e('Copy this key into the Chrome extension to authorize product imports.', 'rey-swatches-import'); ?></p>
                 <div style="background:#f0f0f1; border:1px solid #c3c4c7; border-radius:4px; padding:16px; margin:12px 0; text-align:center;">
-                    <code style="font-size:22px; font-weight:700; letter-spacing:2px; user-select:all;"><?php echo esc_html($formatted ?: __('Not generated', 'rey-swatches-import')); ?></code>
+                    <code style="font-size:14px; font-weight:700; letter-spacing:1px; user-select:all; word-break:break-all;"><?php echo esc_html($key ?: __('Not generated', 'rey-swatches-import')); ?></code>
                 </div>
                 <form method="post" style="margin-top:8px;">
                     <?php wp_nonce_field('rsi_regenerate_key'); ?>
@@ -296,33 +293,5 @@ curl_close($ch);</pre>
             <?php endif; ?>
         </div>
         <?php
-    }
-
-    /**
-     * Format the raw key into readable groups: XXXX-XXXX-XXXX.
-     */
-    private function format_key(string $key): string {
-        if (strlen($key) < self::KEY_LENGTH) {
-            return $key;
-        }
-        $group_len = self::KEY_LENGTH / self::KEY_GROUPS;
-        $groups = [];
-        for ($i = 0; $i < self::KEY_LENGTH; $i += $group_len) {
-            $groups[] = substr($key, $i, $group_len);
-        }
-        return implode('-', $groups);
-    }
-}
-
-/**
- * Static helper to generate a cryptographically random alphanumeric key.
- */
-class Rsi_Key_Generator {
-    public static function generate(): string {
-        $key = '';
-        for ($i = 0; $i < 4; $i++) {
-            $key .= random_int(0, 9);
-        }
-        return $key;
     }
 }

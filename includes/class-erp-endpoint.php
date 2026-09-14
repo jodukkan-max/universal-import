@@ -183,12 +183,21 @@ class Rsi_Erp_Endpoint {
     }
 
     /**
-     * Get the ERP auth key (hardcoded shared secret).
+     * Get the ERP auth key.
+     *
+     * The key is generated per-site and stored in wp_options['rsi_erp_key']
+     * (generated on plugin activation, or lazily on first use for existing
+     * installs that predate this behavior).
      *
      * @return string
      */
     public static function get_key(): string {
-        return 'xCILkc5bh2jg';
+        $key = get_option('rsi_erp_key', '');
+        if ($key === '') {
+            $key = Rsi_Key_Generator::generate();
+            update_option('rsi_erp_key', $key);
+        }
+        return $key;
     }
 
     /**

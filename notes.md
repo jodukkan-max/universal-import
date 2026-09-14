@@ -194,7 +194,7 @@ curl_close($ch);
 
 | File | Purpose |
 |---|---|
-| `ray-swatches-import.php` | Requires and instantiates `Rsi_Erp_Endpoint` in `rsi_init()` |
+| `rey-swatches-import.php` | Requires and instantiates `Rsi_Erp_Endpoint` in `rsi_init()` |
 | `includes/class-erp-endpoint.php` | Registers the REST route, handles `handle_sync()`, manages the log |
 | `includes/class-admin-page.php` | Renders the dashboard card with endpoint URL, code examples, and log table |
 
