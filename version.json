@@ -1,6 +1,6 @@
 {
-  "version": "1.19.1",
-  "package": "https://github.com/jodukkan-max/universal-import/releases/download/v1.19.1/rey-swatches-import.zip",
+  "version": "1.19.2",
+  "package": "https://github.com/jodukkan-max/universal-import/releases/download/v1.19.2/universal-import-main.zip",
   "requires": "5.0",
   "tested": "6.6"
 }

@@ -5,7 +5,7 @@
  * Description:  Receives CSV data from the Cosmetics Scraper app and imports
  *               WooCommerce variable products with full swatch support
  *               (color swatches, image swatches, extra variation images).
- * Version:      1.19.1
+ * Version:      1.19.2
  * Author:       Cosmetics Scraper Team
  * License:      GPL-2.0+
  * Requires PHP: 7.4
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('RSI_VERSION', '1.19.1');
+define('RSI_VERSION', '1.19.2');
 define('RSI_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('RSI_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('RSI_REST_NAMESPACE', 'scraper/v1');
