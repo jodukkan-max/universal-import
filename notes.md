@@ -1,3 +1,20 @@
+# Universal Import — Notes
+
+## Installation & Updates (IMPORTANT)
+
+**Always install/update from the release zip — never from GitHub's "Download ZIP" source archive.**
+
+- ✅ Correct: `https://github.com/jodukkan-max/universal-import/releases/latest/download/rey-swatches-import.zip`
+- ❌ Wrong: `https://github.com/jodukkan-max/universal-import/archive/refs/heads/main.zip` (or any `universal-import-main.zip`)
+
+Why: WordPress installs the plugin into whatever top-level folder the archive unpacks to. The release zip unpacks to `rey-swatches-import/` (the registered plugin slug), while the source archive unpacks to `universal-import-main/`. Installing the source archive puts the plugin in the wrong folder, so the next auto-update installs the correct `rey-swatches-import/` folder and WordPress deactivates the orphaned `universal-import-main/` copy with:
+
+> The plugin universal-import-main/rey-swatches-import.php has been deactivated due to an error: Plugin file does not exist.
+
+Recovery: delete `wp-content/plugins/universal-import-main/`, keep `rey-swatches-import/`, then re-activate.
+
+---
+
 # ERP Sync Endpoint Notes
 
 ## Overview
