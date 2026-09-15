@@ -1,10 +1,10 @@
 <?php
 /**
  * Key Generator — produces cryptographically secure random keys used for the
- * scraper auth key (X-Scraper-Key) and the ERP sync key (X-ERP-Key).
+ * scraper auth key (X-Scraper-Key).
  *
  * This lives in its own file (and is loaded first) so it can be used by the
- * activation hook and both REST endpoints without relying on the admin page.
+ * activation hook without relying on the admin page.
  */
 
 class Rsi_Key_Generator {
