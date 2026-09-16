@@ -34,7 +34,6 @@ class Rsi_Admin_Page {
      */
     public function render(): void {
         $key      = get_option(self::OPTION_KEY, '');
-        $imgbb_key = get_option('rsi_imgbb_key', '');
 
         // Handle scraper auth key regenerate.
         if (isset($_POST['rsi_regenerate']) && check_admin_referer('rsi_regenerate_key')) {
@@ -42,15 +41,6 @@ class Rsi_Admin_Page {
             update_option(self::OPTION_KEY, $key);
             echo '<div class="notice notice-success is-dismissible"><p>'
                 . esc_html__('Auth key regenerated. Update it in the Chrome extension.', 'rey-swatches-import')
-                . '</p></div>';
-        }
-
-        // Handle imgbb key save.
-        if (isset($_POST['rsi_imgbb_key']) && check_admin_referer('rsi_imgbb_save')) {
-            $imgbb_key = sanitize_text_field(wp_unslash($_POST['rsi_imgbb_key']));
-            update_option('rsi_imgbb_key', $imgbb_key);
-            echo '<div class="notice notice-success is-dismissible"><p>'
-                . esc_html__('ImgBB API key saved.', 'rey-swatches-import')
                 . '</p></div>';
         }
         ?>
@@ -69,23 +59,6 @@ class Rsi_Admin_Page {
                             onclick="return confirm('<?php esc_attr_e('Regenerating the key will break any existing extension connections. Continue?', 'rey-swatches-import'); ?>')">
                         <?php esc_html_e('Regenerate Key', 'rey-swatches-import'); ?>
                     </button>
-                </form>
-            </div>
-
-            <div class="card" style="max-width:560px; margin-top:20px;">
-                <h2><?php esc_html_e('ImgBB API Key', 'rey-swatches-import'); ?></h2>
-                <p><?php esc_html_e('Enter your imgbb.com API key to upload product images to imgbb, bypassing WordPress image processing. Get a key at api.imgbb.com.', 'rey-swatches-import'); ?></p>
-                <form method="post">
-                    <?php wp_nonce_field('rsi_imgbb_save'); ?>
-                    <input type="text" name="rsi_imgbb_key" value="<?php echo esc_attr($imgbb_key); ?>"
-                           placeholder="<?php esc_attr_e('Paste your imgbb API key', 'rey-swatches-import'); ?>"
-                           style="width:100%; padding:8px; font-family:monospace; margin-bottom:8px;" />
-                    <button type="submit" class="button button-primary">
-                        <?php esc_html_e('Save', 'rey-swatches-import'); ?>
-                    </button>
-                    <?php if (!empty($imgbb_key)): ?>
-                        <span style="color:green; margin-left:10px;">&#10003; <?php esc_html_e('Configured', 'rey-swatches-import'); ?></span>
-                    <?php endif; ?>
                 </form>
             </div>
 

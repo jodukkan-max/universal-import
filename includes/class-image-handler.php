@@ -31,16 +31,69 @@ class Rsi_Image_Handler {
      * @return int              Attachment ID, or 0 on failure.
      */
     public function download(string $url, string $title = ''): int {
-        // Strip query parameters for cache key (CDN URLs often have ?v=...).
-        $cache_key = $this->cache_key($url);
+        return $this->resolve($url, $title);
+    }
 
-        if (isset($this->cache[$cache_key])) {
-            return $this->cache[$cache_key];
+    /**
+     * Resolve an image URL to an attachment ID, reusing an existing attachment
+     * when the same source image was already imported (this session OR a past
+     * session). This is the dedupe layer that stops the same photo being
+     * downloaded/installed multiple times when it appears in the parent gallery
+     * AND in one or more variations.
+     *
+     * @param string $url       Full image URL.
+     * @param string $title     Optional title for the attachment (product name).
+     * @return int              Attachment ID, or 0 on failure.
+     */
+    public function resolve(string $url, string $title = ''): int {
+        $clean = $this->clean_url($url);
+        if ($clean === '') {
+            return 0;
         }
 
-        $id = $this->sideload($url, $title);
-        $this->cache[$cache_key] = $id;
+        $key = md5($clean);
+        if (isset($this->cache[$key])) {
+            return $this->cache[$key];
+        }
+
+        // Cross-session dedupe: reuse an attachment previously downloaded from
+        // the same source URL (tracked in `_source_url` post meta).
+        $existing = $this->find_existing_by_source_url($clean);
+        if ($existing > 0) {
+            $this->cache[$key] = $existing;
+            return $existing;
+        }
+
+        $id = $this->sideload($clean, $title);
+        $this->cache[$key] = $id;
         return $id;
+    }
+
+    /**
+     * Resolve multiple image URLs to attachment IDs, preserving order and
+     * deduplicating so the SAME image never appears twice in the result.
+     *
+     * Returns only the IDs of successfully resolved images.
+     *
+     * @param string[] $urls
+     * @param string   $title
+     * @return int[]
+     */
+    public function resolve_many(array $urls, string $title = ''): array {
+        $ids  = [];
+        $seen = [];
+        foreach ($urls as $url) {
+            $clean = $this->clean_url($url);
+            if ($clean === '') {
+                continue;
+            }
+            $id = $this->resolve($clean, $title);
+            if ($id > 0 && !isset($seen[$id])) {
+                $seen[$id] = true;
+                $ids[]    = $id;
+            }
+        }
+        return $ids;
     }
 
     /**
@@ -64,10 +117,48 @@ class Rsi_Image_Handler {
     }
 
     /**
-     * Build a cache key from a URL.
+     * Normalize a URL for cache-key / dedupe purposes: make protocol-relative
+     * absolute and strip query parameters (CDN cache-busters like ?v=...), so
+     * the same photo served with a different query string reuses one attachment.
      */
-    private function cache_key(string $url): string {
-        return md5($url);
+    private function clean_url(string $url): string {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return '';
+        }
+        if (strpos($url, '//') === 0) {
+            $url = 'https:' . $url;
+        }
+        $url = preg_replace('/\?.*$/', '', $url);
+        return $url;
+    }
+
+    /**
+     * Find an existing attachment previously downloaded from the same source
+     * URL. Uses an in-memory memo so repeated lookups within one import are
+     * cheap.
+     */
+    private function find_existing_by_source_url(string $clean): int {
+        static $memo = [];
+        if (array_key_exists($clean, $memo)) {
+            return $memo[$clean];
+        }
+
+        $found = 0;
+        $query = new \WP_Query([
+            'post_type'      => 'attachment',
+            'post_status'    => 'inherit',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'meta_key'       => '_source_url',
+            'meta_value'     => $clean,
+        ]);
+        if (!empty($query->posts)) {
+            $found = (int) $query->posts[0];
+        }
+
+        $memo[$clean] = $found;
+        return $found;
     }
 
     /**
@@ -157,6 +248,10 @@ class Rsi_Image_Handler {
         // Generate attachment metadata and thumbnails.
         $attach_data = wp_generate_attachment_metadata($attach_id, $dest);
         wp_update_attachment_metadata($attach_id, $attach_data);
+
+        // Remember the source URL so future imports of the same product reuse
+        // this attachment instead of downloading a duplicate file.
+        update_post_meta($attach_id, '_source_url', $this->clean_url($url));
 
         return $attach_id;
     }

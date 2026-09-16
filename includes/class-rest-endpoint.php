@@ -176,7 +176,7 @@ class Rsi_Rest_Endpoint {
             } else {
                 $image_handler = new Rsi_Image_Handler();
                 $rey_swatches  = new Rsi_Rey_Swatches($image_handler);
-                $creator       = new Rsi_Product_Creator($rey_swatches);
+                $creator       = new Rsi_Product_Creator($rey_swatches, $image_handler);
 
                 $result = $creator->import_all($products);
 

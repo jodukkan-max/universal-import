@@ -13,3 +13,15 @@ Why: WordPress installs the plugin into whatever top-level folder the archive un
 
 Recovery: make sure `wp-content/plugins/universal-import-main/rey-swatches-import.php` exists and remove any other leftover folder for this plugin (e.g. `rey-swatches-import/`), then re-activate.
 
+## Changelog
+
+### 1.19.4
+- **Image deduplication.** Product/variation images are now resolved to a single media attachment (per source URL) instead of being re-downloaded every time they appear. The same photo in the parent gallery *and* multiple variations now installs once and is referenced by ID.
+- Images are passed to the WooCommerce REST API as `{id}` instead of `{src}`, so no duplicate files are created.
+- Cross-session dedupe: a `_source_url` attachment meta is recorded, so re-importing the same product later reuses existing attachments.
+- Cache-busting query strings (`?v=…`) are stripped so the same CDN photo with different params maps to one attachment.
+
+### 1.19.3
+- Removed the ERP sync section (endpoint, admin tab, docs).
+- Removed the "resize images" / ImgBB API key feature (admin UI and all code).
+

@@ -16,14 +16,20 @@ class Rsi_Product_Creator {
     private Rsi_Rey_Swatches $rey_swatches;
 
     /**
+     * @var Rsi_Image_Handler
+     */
+    private Rsi_Image_Handler $image_handler;
+
+    /**
      * Accumulated import report messages.
      *
      * @var string[]
      */
     private array $report = [];
 
-    public function __construct(Rsi_Rey_Swatches $rey_swatches) {
-        $this->rey_swatches     = $rey_swatches;
+    public function __construct(Rsi_Rey_Swatches $rey_swatches, Rsi_Image_Handler $image_handler) {
+        $this->rey_swatches  = $rey_swatches;
+        $this->image_handler = $image_handler;
     }
 
     /**
@@ -133,8 +139,16 @@ class Rsi_Product_Creator {
         if (!empty($parent['short_description'])) {
             $body['short_description'] = $parent['short_description'];
         }
-        if (!empty($parent['images'])) {
-            $body['images'] = array_map(fn($url) => ['src' => $url], $parent['images']);
+
+        // Resolve parent gallery images to attachment IDs ONCE (deduped). Passing
+        // IDs (instead of src URLs) makes WooCommerce reuse existing attachments
+        // instead of downloading a fresh copy for every reference.
+        $parent_image_ids = $this->image_handler->resolve_many(
+            $parent['images'] ?? [],
+            $parent['name'] ?? ''
+        );
+        if (!empty($parent_image_ids)) {
+            $body['images'] = array_map(fn($id) => ['id' => $id], $parent_image_ids);
         }
 
         $body['attributes'] = array_map(fn($spec) => [
@@ -213,10 +227,19 @@ class Rsi_Product_Creator {
                     $var_body['sale_price'] = (string) $sale_price;
                 }
 
-                $var_images       = $var['images'] ?? [];
-                $parent_first_img = $parent['images'][0] ?? '';
-                if (!empty($var_images[0]) && $var_images[0] !== $parent_first_img) {
-                    $var_body['image'] = ['src' => $var_images[0]];
+                $var_images = $var['images'] ?? [];
+                if (!empty($var_images[0])) {
+                    // Resolve the variation's photo to an attachment ID (reusing
+                    // any already-imported copy). Skip it entirely when it is
+                    // already part of the parent gallery, so the same photo is
+                    // never attached twice.
+                    $var_image_id = $this->image_handler->resolve(
+                        $var_images[0],
+                        $parent['name'] ?? ''
+                    );
+                    if ($var_image_id > 0 && !in_array($var_image_id, $parent_image_ids, true)) {
+                        $var_body['image'] = ['id' => $var_image_id];
+                    }
                 }
 
                 $this->rest_post("/wc/v3/products/{$product_id}/variations", $var_body);
@@ -284,8 +307,14 @@ class Rsi_Product_Creator {
             $tag_names = array_map('trim', explode(',', $parent['tags']));
             $body['tags'] = array_map(fn($t) => ['name' => $t], $tag_names);
         }
-        if (!empty($parent['images'])) {
-            $body['images'] = array_map(fn($url) => ['src' => $url], $parent['images']);
+        // Resolve images to attachment IDs (deduped) so the same photo is never
+        // downloaded twice.
+        $image_ids = $this->image_handler->resolve_many(
+            $parent['images'] ?? [],
+            $parent['name'] ?? ''
+        );
+        if (!empty($image_ids)) {
+            $body['images'] = array_map(fn($id) => ['id' => $id], $image_ids);
         }
 
         // Prices.
