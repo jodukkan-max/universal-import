@@ -1,6 +1,6 @@
 {
-  "version": "1.19.5",
-  "package": "https://github.com/jodukkan-max/universal-import/releases/download/v1.19.5/universal-import-main.zip",
+  "version": "1.19.6",
+  "package": "https://github.com/jodukkan-max/universal-import/releases/download/v1.19.6/universal-import.zip",
   "requires": "5.0",
   "tested": "6.6"
 }

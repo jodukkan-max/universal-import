@@ -29,10 +29,10 @@ class Universal_Import_Updater {
 	 *
 	 * @var string
 	 */
-	const PLUGIN_SLUG = 'universal-import-main';
+	const PLUGIN_SLUG = 'universal-import';
 
 	/**
-	 * The plugin basename (universal-import-main/rey-swatches-import.php).
+	 * The plugin basename (universal-import/rey-swatches-import.php).
 	 *
 	 * @var string
 	 */

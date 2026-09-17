@@ -28,38 +28,38 @@ jobs:
             exit 1
           fi
 
-      # The zip must contain a single top-level `universal-import-main/` directory.
+      # The zip must contain a single top-level `universal-import/` directory.
       # WordPress installs the update into whatever directory the archive unpacks
       # to, so any other name would move the plugin and deactivate it mid-update.
       - name: Build plugin zip
         run: |
-          mkdir -p build/universal-import-main
+          mkdir -p build/universal-import
           rsync -a \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='build' \
             --exclude='.gitignore' \
             --exclude='README.md' \
-            ./ build/universal-import-main/
-          cd build && zip -r -q -X ../universal-import-main.zip universal-import-main
+            ./ build/universal-import/
+          cd build && zip -r -q -X ../universal-import.zip universal-import
 
       - name: Verify archive layout
         run: |
-          TOP=$(unzip -Z1 universal-import-main.zip | cut -d/ -f1 | sort -u)
+          TOP=$(unzip -Z1 universal-import.zip | cut -d/ -f1 | sort -u)
           echo "top-level entries: $TOP"
-          if [ "$TOP" != "universal-import-main" ]; then
-            echo "::error::Archive must contain exactly one top-level directory named 'universal-import-main'."
+          if [ "$TOP" != "universal-import" ]; then
+            echo "::error::Archive must contain exactly one top-level directory named 'universal-import'."
             exit 1
           fi
-          unzip -l universal-import-main.zip | grep -q 'universal-import-main/rey-swatches-import.php' || {
-            echo "::error::universal-import-main/rey-swatches-import.php missing from the archive."
+          unzip -l universal-import.zip | grep -q 'universal-import/rey-swatches-import.php' || {
+            echo "::error::universal-import/rey-swatches-import.php missing from the archive."
             exit 1
           }
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: universal-import-main.zip
+          files: universal-import.zip
           generate_release_notes: true
 
       # Rewrite version.json in `main` so existing installs see the update.
@@ -72,7 +72,7 @@ jobs:
           with open('version.json', 'w') as f:
               json.dump({
                   "version": "${TAG}",
-                  "package": "https://github.com/jodukkan-max/universal-import/releases/download/v${TAG}/universal-import-main.zip",
+                  "package": "https://github.com/jodukkan-max/universal-import/releases/download/v${TAG}/universal-import.zip",
                   "requires": "5.0",
                   "tested": "6.6",
               }, f, indent=2)
