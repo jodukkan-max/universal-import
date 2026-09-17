@@ -15,6 +15,9 @@ Recovery: make sure `wp-content/plugins/universal-import-main/rey-swatches-impor
 
 ## Changelog
 
+### 1.19.5
+- **Cache the GitHub update check.** The updater now caches `version.json` in a site transient for 12 hours instead of hitting `raw.githubusercontent.com` on every admin page load (it was firing 3× per request). Failures back off for 1 hour instead of retrying on each load.
+
 ### 1.19.4
 - **Image deduplication.** Product/variation images are now resolved to a single media attachment (per source URL) instead of being re-downloaded every time they appear. The same photo in the parent gallery *and* multiple variations now installs once and is referenced by ID.
 - Images are passed to the WooCommerce REST API as `{id}` instead of `{src}`, so no duplicate files are created.

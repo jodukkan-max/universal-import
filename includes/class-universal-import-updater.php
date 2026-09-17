@@ -111,26 +111,72 @@ class Universal_Import_Updater {
 	// -----------------------------------------------------------------
 
 	/**
-	 * Fetch the latest version.json from GitHub (live, no caching).
+	 * Transient key used to cache the remote version.json payload.
+	 *
+	 * @var string
+	 */
+	const TRANSIENT_KEY = 'universal_import_update_check';
+
+	/**
+	 * How long a successful version.json response is cached (12 hours),
+	 * mirroring WordPress core's own update cadence.
+	 *
+	 * @var int
+	 */
+	const CACHE_TTL = 12 * HOUR_IN_SECONDS;
+
+	/**
+	 * How long a failed fetch is cached (1 hour) so a flaky GitHub/CDN
+	 * response doesn't trigger a retry on every single admin page load.
+	 *
+	 * @var int
+	 */
+	const FAILURE_TTL = HOUR_IN_SECONDS;
+
+	/**
+	 * Fetch the latest version.json from GitHub, caching the result in a
+	 * site transient so we hit raw.githubusercontent.com at most once per
+	 * 12 hours instead of on every admin request (the update check runs
+	 * multiple times per page load).
 	 *
 	 * @return array|null Decoded version data, or null on failure.
 	 */
 	private function fetch_version_data() {
+		$cached = get_site_transient( self::TRANSIENT_KEY );
+
+		// A cached successful payload is reused without any HTTP request.
+		if ( is_array( $cached ) && ! empty( $cached['version'] ) && ! empty( $cached['package'] ) ) {
+			return $cached;
+		}
+
+		// A cached failure (sentinel string) means we tried recently and GitHub
+		// was unreachable. Back off rather than hammering it again this request.
+		// NOTE: we can't use `false` as the sentinel — get_site_transient()
+		// returns `false` for a *missing* transient too, so a `false` value
+		// would wrongly short-circuit the very first (legitimate) fetch.
+		if ( 'failed' === $cached ) {
+			return null;
+		}
+
 		$response = wp_remote_get( self::VERSION_URL, array( 'timeout' => 10 ) );
 
 		if ( is_wp_error( $response ) ) {
+			set_site_transient( self::TRANSIENT_KEY, 'failed', self::FAILURE_TTL );
 			return null;
 		}
 
 		if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			set_site_transient( self::TRANSIENT_KEY, 'failed', self::FAILURE_TTL );
 			return null;
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $body ) || empty( $body['version'] ) || empty( $body['package'] ) ) {
+			set_site_transient( self::TRANSIENT_KEY, 'failed', self::FAILURE_TTL );
 			return null;
 		}
 
+		set_site_transient( self::TRANSIENT_KEY, $body, self::CACHE_TTL );
 		return $body;
 	}
 
