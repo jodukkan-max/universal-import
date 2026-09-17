@@ -134,43 +134,19 @@ class Universal_Import_Updater {
 	const FAILURE_TTL = HOUR_IN_SECONDS;
 
 	/**
-	 * In-request cache. The `site_transient_update_plugins` filter fires
-	 * multiple times per admin page load (wp_loaded, admin_init, …); this
-	 * guarantees we never hit GitHub more than once *within a single request*,
-	 * even if a caching/cleanup plugin is clearing transients underneath us.
-	 *
-	 * @var array|null
-	 */
-	private static $memory_cache = null;
-
-	/**
-	 * Whether $memory_cache has been populated for the current request.
-	 *
-	 * @var bool
-	 */
-	private static $memory_cache_set = false;
-
-	/**
 	 * Fetch the latest version.json from GitHub, caching the result in a
 	 * site transient so we hit raw.githubusercontent.com at most once per
-	 * 12 hours instead of on every admin request (the update check runs
-	 * multiple times per page load).
+	 * 12 hours. The site transient is set synchronously, so the multiple
+	 * `site_transient_update_plugins` firings within a single admin request
+	 * all read the just-written cache and never re-fetch.
 	 *
 	 * @return array|null Decoded version data, or null on failure.
 	 */
 	private function fetch_version_data() {
-		// In-request dedupe (belt) — only ever fetch once per page load.
-		if ( self::$memory_cache_set ) {
-			return is_array( self::$memory_cache ) ? self::$memory_cache : null;
-		}
-		self::$memory_cache_set = true;
-
-		// Site transient (suspenders) — reuse across requests for up to 12h.
 		$cached = get_site_transient( self::TRANSIENT_KEY );
 
 		// A cached successful payload is reused without any HTTP request.
 		if ( is_array( $cached ) && ! empty( $cached['version'] ) && ! empty( $cached['package'] ) ) {
-			self::$memory_cache = $cached;
 			return $cached;
 		}
 
@@ -180,32 +156,27 @@ class Universal_Import_Updater {
 		// returns `false` for a *missing* transient too, so a `false` value
 		// would wrongly short-circuit the very first (legitimate) fetch.
 		if ( 'failed' === $cached ) {
-			self::$memory_cache = null;
 			return null;
 		}
 
 		$response = wp_remote_get( self::VERSION_URL, array( 'timeout' => 10 ) );
 
 		if ( is_wp_error( $response ) ) {
-			self::$memory_cache = null;
 			set_site_transient( self::TRANSIENT_KEY, 'failed', self::FAILURE_TTL );
 			return null;
 		}
 
 		if ( 200 !== wp_remote_retrieve_response_code( $response ) ) {
-			self::$memory_cache = null;
 			set_site_transient( self::TRANSIENT_KEY, 'failed', self::FAILURE_TTL );
 			return null;
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( ! is_array( $body ) || empty( $body['version'] ) || empty( $body['package'] ) ) {
-			self::$memory_cache = null;
 			set_site_transient( self::TRANSIENT_KEY, 'failed', self::FAILURE_TTL );
 			return null;
 		}
 
-		self::$memory_cache = $body;
 		set_site_transient( self::TRANSIENT_KEY, $body, self::CACHE_TTL );
 		return $body;
 	}

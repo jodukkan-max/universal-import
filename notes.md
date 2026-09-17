@@ -16,7 +16,7 @@ Recovery: make sure `wp-content/plugins/universal-import/rey-swatches-import.php
 ## Changelog
 
 ### 1.19.7
-- **In-request dedupe for the update check.** The `site_transient_update_plugins` filter fires multiple times per admin page load; the updater now also keeps a per-request in-memory cache so it never hits GitHub more than once per page load, even if a caching/cleanup plugin clears the site transient underneath it.
+- **Cache the GitHub update check in a 12-hour site transient.** The updater now stores `version.json` in `get/set_site_transient` (12h success / 1h failure), so it hits `raw.githubusercontent.com` at most once every 12 hours instead of on every admin page load (the update check was firing 3× per request).
 
 ### 1.19.6
 - **Standardize the plugin folder/slug on `universal-import`.** The release zip, top-level folder, and updater `PLUGIN_SLUG` were previously `universal-import-main`; they now all use `universal-import` to match installs that were copied from the raw source folder. Fixes the folder mismatch that caused the update to install into a second folder (and the "Plugin file does not exist" deactivation).
